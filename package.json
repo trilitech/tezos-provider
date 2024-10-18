@@ -1,0 +1,89 @@
+{
+  "name": "@trili/tezos-provider",
+  "description": "Tezos Provider for WalletConnect Protocol",
+  "version": "1.0.3",
+  "author": "Trilitech TriliTech <contact@trili.tech> (https://trili.tech)",
+  "homepage": "https://trili.tech",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trilitech/tezos-connect",
+    "directory": "."
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es.js",
+  "unpkg": "dist/index.umd.js",
+  "types": "dist/types/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsup-node",
+    "test:pre": "rm -rf ./test/test.db",
+    "test:run": "jest",
+    "test": "yarn test:pre; yarn test:run",
+    "prettier": "prettier --check '{src,test}/**/*.{js,ts,jsx,tsx}' --write",
+    "lint": "eslint -c 'eslint.config.mjs' --fix './src/**/*.ts'",
+    "lint:ci": "eslint 'src/**/*.ts' -f json -o lintReport.json || true"
+  },
+  "tsup": {
+    "dts": true,
+    "entry": [
+      "src/index.ts"
+    ],
+    "clean": true,
+    "format": [
+      "cjs",
+      "esm"
+    ]
+  },
+  "dependencies": {
+    "@airgap/beacon-types": "^4.2.2",
+    "@taquito/rpc": "~20.0.1",
+    "@taquito/taquito": "~20.0.1",
+    "@trili/tezos-provider": "^1.0.2",
+    "@walletconnect/keyvaluestorage": "^1.1.1",
+    "@walletconnect/logger": "^2.1.2",
+    "@walletconnect/types": "2.13.3",
+    "@walletconnect/universal-provider": "^2.17.1",
+    "axios": "^1.7.7",
+    "micromatch": "^4.0.8",
+    "package.json": "^2.0.1",
+    "rollup": "^4.24.0",
+    "typescript": "^5.6.3",
+    "yarn.lock": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.13",
+    "@types/micromatch": "^4",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "depcheck": "^1.4.7",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "ts-jest": "^29.2.5",
+    "tsup": "^8.2.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
