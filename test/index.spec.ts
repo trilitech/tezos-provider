@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { ScriptedContracts } from "@taquito/rpc";
 import { TezosToolkit } from "@taquito/taquito";
 import { UniversalProvider } from "@walletconnect/universal-provider";
-import axios from "axios";
+import fetchMock from "jest-fetch-mock";
 
 import { SAMPLES, SAMPLE_KINDS } from "./samples";
 import { TezosChainDataMainnet, UnsupportedOperations } from "../src/constants";
@@ -19,6 +19,7 @@ import {
   TezosInitializationError,
   TezosMethod,
 } from "../src/types";
+fetchMock.enableMocks();
 
 interface PartialTezosOriginationOperation
   extends Omit<PartialTezosOriginationOperationOriginal, "script"> {
@@ -34,27 +35,30 @@ type PartialTezosOperation =
 
 jest.mock("@walletconnect/universal-provider");
 jest.mock("@taquito/taquito");
-jest.mock("axios");
 
 describe("TezosProvider", () => {
   let provider: TezosProvider;
-  const mockInit = jest.fn();
   const mockConnect = jest.fn();
   const mockRequest = jest.fn();
 
   beforeEach(() => {
-    (UniversalProvider.init as jest.Mock).mockResolvedValue({
+    jest.mocked(UniversalProvider.init).mockResolvedValue({
       on: jest.fn(),
       connect: mockConnect,
       request: mockRequest,
       session: {
         namespaces: { tezos: { accounts: ["tezos:mainnet:address1"] } },
       },
-    });
+    } as unknown as InstanceType<typeof UniversalProvider>);
 
-    mockInit.mockClear();
-    mockConnect.mockClear();
-    mockRequest.mockClear();
+    global.fetch = jest.fn().mockResolvedValue({
+      json: jest.fn().mockResolvedValue([
+        {
+          status: "applied",
+          originatedContract: { kind: "smart_contract", address: "KT1..." },
+        },
+      ]),
+    });
   });
 
   it("should initialize the TezosProvider", async () => {
@@ -63,7 +67,7 @@ describe("TezosProvider", () => {
       metadata: {},
     } as TezosProviderOpts);
 
-    expect(provider).toBeDefined();
+    expect(provider).toBeInstanceOf(TezosProvider);
     expect(UniversalProvider.init).toHaveBeenCalledTimes(1);
   });
 
@@ -257,13 +261,13 @@ describe("TezosProvider", () => {
   });
 
   it("should call getContractAddress and return contract addresses", async () => {
-    (axios.get as jest.Mock).mockResolvedValue({
-      data: [
+    global.fetch = jest.fn().mockResolvedValue({
+      json: jest.fn().mockResolvedValue([
         {
           status: "applied",
           originatedContract: { kind: "smart_contract", address: "KT1..." },
         },
-      ],
+      ]),
     });
     provider = await TezosProvider.init({
       projectId: "test",
@@ -275,7 +279,7 @@ describe("TezosProvider", () => {
     expect(contractAddresses).toEqual(["KT1..."]);
     const api = provider.chainMap[provider.chainId].api;
     const expectedUrl = `${api}/operations/opHash`;
-    expect(axios.get).toHaveBeenCalledWith(expectedUrl);
+    expect(fetch).toHaveBeenCalledWith(expectedUrl);
   });
 
   it("should handle getCurrentProposal correctly", async () => {

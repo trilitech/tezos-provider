@@ -30,7 +30,6 @@ import { KeyValueStorageOptions } from "@walletconnect/keyvaluestorage";
 import { Logger } from "@walletconnect/logger";
 import { SessionTypes } from "@walletconnect/types";
 import { UniversalProvider, Metadata } from "@walletconnect/universal-provider";
-import axios from "axios";
 
 import {
   DefaultTezosMethods,
@@ -65,6 +64,13 @@ type PartialTezosOperation =
     >
   | PartialTezosOriginationOperation;
 
+interface Operation {
+  status: string;
+  originatedContract: {
+    kind: string;
+    address: string;
+  };
+}
 export interface TezosProviderOpts {
   projectId: string;
   metadata: Metadata;
@@ -227,8 +233,8 @@ export class TezosProvider {
 
     const api = this.chainMap[this.chainId].api;
     const path = `${api}/operations/${hash}`;
-    const response = await axios.get(path);
-    const data = response.data;
+    const response = await globalThis.fetch(path);
+    const data = (await response.json()) as Operation[];
 
     return data
       .map((op: any) => {

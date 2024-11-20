@@ -7,6 +7,7 @@ This provider manages the connection to the Tezos network, facilitates transacti
 
 ```
 npm i @walletconnect/tezos-provider @walletconnect/modal
+npx install-peerdeps @trili/tezos-provider
 ```
 
 ## Initialization
@@ -14,20 +15,20 @@ npm i @walletconnect/tezos-provider @walletconnect/modal
 To use `TezosProvider`, you first need to initialize it with the necessary options:
 
 ```typescript
-import TezosProvider from 'path-to-tezos-provider';
+import TezosProvider from "path-to-tezos-provider";
 
 const provider = await TezosProvider.init({
-  projectId: 'your-project-id', // REQUIRED WalletConnect project ID
+  projectId: "your-project-id", // REQUIRED WalletConnect project ID
   metadata: {
-    name: 'Your DApp Name',
-    description: 'Your DApp Description',
-    url: 'https://your-dapp-url.com',
-    icons: ['https://your-dapp-url.com/icon.png'],
+    name: "Your DApp Name",
+    description: "Your DApp Description",
+    url: "https://your-dapp-url.com",
+    icons: ["https://your-dapp-url.com/icon.png"],
   },
-  relayUrl: 'wss://relay.walletconnect.com', // OPTIONAL WalletConnect relay URL
+  relayUrl: "wss://relay.walletconnect.com", // OPTIONAL WalletConnect relay URL
   storageOptions: {}, // OPTIONAL key-value storage settings
   disableProviderPing: false, // OPTIONAL set to true to disable provider ping
-  logger: 'info', // OPTIONAL log level, default is 'info'
+  logger: "info", // OPTIONAL log level, default is 'info'
 });
 ```
 
@@ -50,11 +51,11 @@ After initializing the provider, you can connect it to the Tezos network:
 await provider.connect({
   chains: [
     {
-      id: 'tezos:mainnet',
-      rpc: ['https://mainnet-tezos.giganode.io'],
+      id: "tezos:mainnet",
+      rpc: ["https://mainnet-tezos.giganode.io"],
     },
   ],
-  methods: ['tezos_getAccounts', 'tezos_send', 'tezos_sign'],
+  methods: ["tezos_getAccounts", "tezos_send", "tezos_sign"],
   events: [], // OPTIONAL Tezos events
 });
 ```
@@ -70,7 +71,7 @@ If you are not using a modal for QR code display, you can subscribe to the `disp
 ```typescript
 provider.on("display_uri", (uri: string) => {
   // Handle the connection URI
-  console.log('Connection URI:', uri);
+  console.log("Connection URI:", uri);
 });
 
 await provider.connect();
@@ -96,12 +97,12 @@ To send a transaction:
 
 ```typescript
 const transactionResponse = await provider.tezosSendTransaction({
-  kind: 'transaction',
-  destination: 'tz1...',
-  amount: '1000000', // Amount in mutez
+  kind: "transaction",
+  destination: "tz1...",
+  amount: "1000000", // Amount in mutez
 });
 
-console.log('Transaction hash:', transactionResponse.hash);
+console.log("Transaction hash:", transactionResponse.hash);
 ```
 
 ### Sign Messages
@@ -110,14 +111,14 @@ To sign a message, encode it to hex first:
 
 ```typescript
 const textEncoder = new TextEncoder();
-const bytes = textEncoder.encode('Your string here');
-const hexBytes = Buffer.from(bytes).toString('hex');
+const bytes = textEncoder.encode("Your string here");
+const hexBytes = Buffer.from(bytes).toString("hex");
 
 const signResponse = await provider.tezosSign({
   payload: hexBytes,
 });
 
-console.log('Signature:', signResponse.signature);
+console.log("Signature:", signResponse.signature);
 ```
 
 ## Events
@@ -140,6 +141,7 @@ provider.on("disconnect", handler);
 ```
 
 ## Error Handling
+
 The provider will throw errors if:
 
 - `TezosInitializationError`: If the provider is not initialized correctly.

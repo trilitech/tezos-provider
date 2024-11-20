@@ -1,8 +1,7 @@
-
 import tsParser from "@typescript-eslint/parser"; // Import the TypeScript parser
 import tsPlugin from "@typescript-eslint/eslint-plugin"; // Import the TypeScript plugin
 import prettierPlugin from "eslint-plugin-prettier"; // Import the Prettier plugin
-import importPlugin from 'eslint-plugin-import';
+import importPlugin from "eslint-plugin-import";
 
 export default {
   languageOptions: {
@@ -22,10 +21,10 @@ export default {
     "no-undef": ["error"],
     "no-var": ["error"],
     "object-curly-spacing": ["error", "always"],
-    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "semi": ["error", "always"],
+    quotes: ["error", "double", { allowTemplateLiterals: true }],
+    semi: ["error", "always"],
     "no-console": ["error", { allow: ["warn"] }],
-    "import/no-extraneous-dependencies": ["error"], 
+    "import/no-extraneous-dependencies": ["error"],
     "import/order": [
       "warn",
       {
