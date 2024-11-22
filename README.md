@@ -10,6 +10,19 @@ npm i @walletconnect/tezos-provider @walletconnect/modal
 npx install-peerdeps @trili/tezos-provider
 ```
 
+These libraries are external and have to be installed before using the Tezos Provider:
+```
+    "external": [
+      "@taquito/taquito",
+      "@taquito/rpc",
+      "@airgap/beacon-types",
+      "@walletconnect/universal-provider",
+      "@walletconnect/types",
+      "@walletconnect/keyvaluestorage",
+      "@walletconnect/logger"
+    ]
+```
+
 ## Initialization
 
 To use `TezosProvider`, you first need to initialize it with the necessary options:
