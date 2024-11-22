@@ -16,7 +16,7 @@ export default {
   },
   files: ["**/*.ts"],
   rules: {
-    "comma-dangle": ["error", "always-multiline"],
+    "comma-dangle": ["error", "only-multiline"],
     "require-await": "error",
     "no-undef": ["error"],
     "no-var": ["error"],

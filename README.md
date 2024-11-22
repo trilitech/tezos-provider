@@ -11,6 +11,7 @@ npx install-peerdeps @trili/tezos-provider
 ```
 
 These libraries are external and have to be installed before using the Tezos Provider:
+
 ```
     "external": [
       "@taquito/taquito",
@@ -157,7 +158,6 @@ provider.on("disconnect", handler);
 
 The provider will throw errors if:
 
-- `TezosInitializationError`: If the provider is not initialized correctly.
 - `TezosProviderError`: If there are issues with the connection or account retrieval.
 
 ## Supported WalletConnectModal options (qrModalOptions)

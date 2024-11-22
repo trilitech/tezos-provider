@@ -38,10 +38,9 @@ export enum TezosEvent {
 }
 
 export interface TezosConnectOpts {
-  chains?: ChainData[]; // default: TezosChainData. Will connect to the first in the list
+  chain?: ChainData; // default: TezosChainData. Will connect to the first in the list
   methods?: TezosMethod[]; // default: defaultTezosMethods
   events?: TezosEvent[];
-  optionalEvents?: string[];
 }
 
 export interface AssetData {

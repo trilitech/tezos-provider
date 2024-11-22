@@ -34,7 +34,6 @@ import { UniversalProvider, Metadata } from "@walletconnect/universal-provider";
 import {
   DefaultTezosMethods,
   RelayUrl,
-  TezosChainDataMainnet,
   TezosChainDataTestnet,
   TezosChainMap,
   UnsupportedOperations,
@@ -80,51 +79,68 @@ export interface TezosProviderOpts {
   logger?: string | Logger; // default: "info"
 }
 
+interface ConnectionData {
+  chainId: string;
+  accounts: string[];
+  address: string;
+  tezosToolkit: TezosToolkit;
+}
+
+type RequiredProviderOpts = Required<TezosProviderOpts>;
+type RequiredConnectOpts = Required<TezosConnectOpts>;
+
 // Provides a way to interact with the Tezos blockchain.
 // Secures that WalletConnect is used with PartialTezosOperation
 export class TezosProvider {
+  private static instance: TezosProvider | null = null;
   public namespace: string = "tezos";
-  public signer?: InstanceType<typeof UniversalProvider> = undefined;
-  private tezosToolkit?: TezosToolkit;
-  public address?: string;
+  public signer: InstanceType<typeof UniversalProvider>;
+
+  public config: RequiredProviderOpts;
+  public connection: ConnectionData | null = null;
   public isConnected: boolean = false;
-  public config?: TezosProviderOpts;
-  public chainId: string = "";
   public chainMap: ChainsMap = TezosChainMap;
-  public accounts: string[] = [];
 
-  constructor() {}
-
-  static init = async (
-    opts: TezosProviderOpts = {
-      projectId: "",
-      metadata: {} as Metadata,
-      relayUrl: RelayUrl, // default relay
-      storageOptions: {} as KeyValueStorageOptions,
-      disableProviderPing: false, // default is to enable ping
-      logger: "info", // default log level
-    }
-  ): Promise<TezosProvider> => {
-    const provider = new TezosProvider();
-    await provider.initialize(opts);
-    return provider;
-  };
-
-  protected initialize = async (opts: TezosProviderOpts): Promise<void> => {
-    this.config = {
-      ...opts,
-    };
-    this.signer = await UniversalProvider.init({
-      ...opts,
-    });
+  private constructor(
+    signer: InstanceType<typeof UniversalProvider>,
+    config: RequiredProviderOpts
+  ) {
+    this.signer = signer;
+    this.config = config;
 
     this.signer.on("connect", () => {
       this.isConnected = true;
     });
     this.signer.on("disconnect", () => {
       this.isConnected = false;
+      this.connection = null;
     });
+  }
+
+  static init = async (opts: TezosProviderOpts): Promise<TezosProvider> => {
+    if (TezosProvider.instance) {
+      return TezosProvider.instance;
+    }
+    const config: RequiredProviderOpts = {
+      projectId: opts.projectId,
+      metadata: opts.metadata,
+      relayUrl: opts.relayUrl || RelayUrl,
+      storageOptions: opts.storageOptions || {},
+      disableProviderPing: opts.disableProviderPing || false,
+      logger: opts.logger || "info",
+    };
+
+    const signer = await UniversalProvider.init({ ...config });
+
+    TezosProvider.instance = new TezosProvider(signer, config);
+    return TezosProvider.instance;
   };
+  static getInstance(): TezosProvider {
+    if (!TezosProvider.instance) {
+      throw new TezosInitializationError();
+    }
+    return TezosProvider.instance;
+  }
 
   static extractChainId = (chain: string): string => {
     return chain.includes(":") ? chain.split(":")[1] : chain;
@@ -137,40 +153,26 @@ export class TezosProvider {
 
   // Override connect method
   public connect = async (
-    opts: TezosConnectOpts = {
-      chains: [TezosChainDataTestnet, TezosChainDataMainnet],
-      methods: DefaultTezosMethods,
-      events: [],
-    }
+    opts: TezosConnectOpts
   ): Promise<SessionTypes.Struct | undefined> => {
-    if (!this.signer || !this.config) {
-      throw new TezosInitializationError();
-    }
-    if (!opts.chains || !opts.chains.length) {
-      throw new TezosProviderError("No chains provided");
-    }
+    const config: RequiredConnectOpts = {
+      chain: opts.chain || TezosChainDataTestnet,
+      methods: opts.methods || DefaultTezosMethods,
+      events: opts.events || [],
+    };
 
-    this.chainId = opts.chains[0].id;
-
-    // convert chain data to map with chain id as a key
-    this.chainMap = opts.chains.reduce((acc, chain) => {
-      acc[chain.id] = chain;
-      return acc;
-    }, {} as ChainsMap);
+    const rpcUrl = config.chain.rpc[0];
 
     let res = await this.signer.connect({
       namespaces: {
         tezos: {
-          chains: opts.chains.map(chain => chain.id),
-          methods: opts.methods ?? DefaultTezosMethods,
-          events: opts.events ?? [],
+          chains: [config.chain.id],
+          methods: config.methods || DefaultTezosMethods,
+          events: config.events || [],
         },
       },
     });
     this.isConnected = true;
-
-    const rpcUrl = this.chainMap[this.chainId].rpc[0];
-    this.tezosToolkit = new TezosToolkit(rpcUrl);
 
     // Set the address if the session exists
     if (this.signer.session) {
@@ -182,37 +184,34 @@ export class TezosProvider {
         throw new TezosProviderError("No accounts found in session");
       }
       // Ensure accounts array is unique
-      this.accounts = [...new Set(accounts)];
-      this.setAddress(this.accounts[0]);
+      this.connection = {
+        chainId: config.chain.id,
+        accounts: [...new Set(accounts)],
+        address: accounts[0],
+        tezosToolkit: new TezosToolkit(rpcUrl),
+      };
     }
     return res;
-  };
-
-  public setAddress = (address: string): void => {
-    if (!this.accounts.includes(address)) {
-      throw new TezosProviderError(
-        `Address ${address} not found in accounts ${this.accounts}. Get Accounts first.`
-      );
-    }
-    this.address = address;
   };
 
   public getChainId = (): string | undefined => {
     if (!this.config) {
       throw new TezosInitializationError();
     }
-    return this.chainId;
+    if (!this.connection) {
+      throw new TezosConnectionError();
+    }
+    return this.connection.chainId;
   };
 
   // Method to get account balance
   public getBalance = async (): Promise<AssetData> => {
-    if (!this.address) {
+    if (!this.connection) {
       throw new TezosConnectionError();
     }
-    if (!this.tezosToolkit) {
-      throw new TezosProviderError("tezosToolkit is not initialized");
-    }
-    const balance = await this.tezosToolkit.tz.getBalance(this.address);
+    const balance = await this.connection.tezosToolkit.tz.getBalance(
+      this.connection.address
+    );
     const balanceInTez = balance.toNumber();
     return {
       balance: balanceInTez,
@@ -230,8 +229,11 @@ export class TezosProvider {
     if (!hash) {
       throw new TezosProviderError(`No hash provided`);
     }
+    if (!this.connection) {
+      throw new TezosConnectionError();
+    }
 
-    const api = this.chainMap[this.chainId].api;
+    const api = this.chainMap[this.connection.chainId].api;
     const path = `${api}/operations/${hash}`;
     const response = await globalThis.fetch(path);
     const data = (await response.json()) as Operation[];
@@ -249,15 +251,16 @@ export class TezosProvider {
   };
 
   public getCurrentProposal = async (): Promise<string | null> => {
-    if (!this.tezosToolkit) {
-      throw new TezosProviderError("tezosToolkit is not initialized");
+    if (!this.connection) {
+      throw new TezosConnectionError();
     }
-    const currentProposal = await this.tezosToolkit.rpc.getCurrentProposal();
+    const currentProposal =
+      await this.connection.tezosToolkit.rpc.getCurrentProposal();
     return currentProposal;
   };
 
   public checkConnection = (): boolean => {
-    if (!this.isConnected || !this.address) {
+    if (!this.isConnected || !this.connection) {
       throw new TezosConnectionError();
     }
     return true;
@@ -266,6 +269,9 @@ export class TezosProvider {
   // Requests using the WalletConnect connection
 
   public getAccounts = async (): Promise<TezosGetAccountResponse> => {
+    if (!this.connection) {
+      throw new TezosConnectionError();
+    }
     if (!this.signer) {
       throw new TezosInitializationError();
     }
@@ -276,15 +282,18 @@ export class TezosProvider {
         method: TezosMethod.GET_ACCOUNTS,
         params: {},
       },
-      this.chainId
+      this.connection.chainId
     );
-    this.accounts = result.map(account => account.address);
+    this.connection.accounts = result.map(account => account.address);
 
     return result;
   };
 
   // Method to sign a message
   public sign = async (payload: string): Promise<TezosSignResponse> => {
+    if (!this.connection) {
+      throw new TezosConnectionError();
+    }
     if (!this.signer) {
       throw new TezosInitializationError();
     }
@@ -294,11 +303,11 @@ export class TezosProvider {
       {
         method: TezosMethod.SIGN,
         params: {
-          account: this.address,
+          account: this.connection.address,
           payload,
         },
       },
-      this.chainId
+      this.connection.chainId
     );
 
     return result;
@@ -311,7 +320,7 @@ export class TezosProvider {
     if (!this.signer) {
       throw new TezosInitializationError();
     }
-    if (!this.address) {
+    if (!this.connection) {
       throw new TezosConnectionError();
     }
     if (UnsupportedOperations.includes(op.kind)) {
@@ -320,17 +329,15 @@ export class TezosProvider {
       );
     }
 
-    this.checkConnection();
-
     const result = await this.signer.request<TezosSendResponse>(
       {
         method: TezosMethod.SEND,
         params: {
-          account: this.address,
+          account: this.connection.address,
           operations: [op],
         },
       },
-      this.chainId
+      this.connection.chainId
     );
     return result;
   };
@@ -374,12 +381,12 @@ export class TezosProvider {
   public sendStake = (
     op: PartialTezosTransactionOperation
   ): Promise<TezosSendResponse> => {
-    if (!this.address) {
+    if (!this.connection) {
       throw new TezosConnectionError();
     }
     return this.send({
       ...op,
-      destination: this.address,
+      destination: this.connection.address,
       parameters: { entrypoint: "stake", value: { prim: "Unit" } },
     });
   };
@@ -387,12 +394,12 @@ export class TezosProvider {
   public sendUnstake = (
     op: PartialTezosTransactionOperation
   ): Promise<TezosSendResponse> => {
-    if (!this.address) {
+    if (!this.connection) {
       throw new TezosConnectionError();
     }
     return this.send({
       ...op,
-      destination: this.address,
+      destination: this.connection.address,
       parameters: { entrypoint: "unstake", value: { prim: "Unit" } },
     });
   };
@@ -400,12 +407,12 @@ export class TezosProvider {
   public sendFinalizeUnstake = (
     op: PartialTezosTransactionOperation
   ): Promise<TezosSendResponse> => {
-    if (!this.address) {
+    if (!this.connection) {
       throw new TezosConnectionError();
     }
     return this.send({
       ...op,
-      destination: this.address,
+      destination: this.connection.address,
       parameters: { entrypoint: "finalize_unstake", value: { prim: "Unit" } },
     });
   };
@@ -413,10 +420,10 @@ export class TezosProvider {
   public sendActivateAccount = (
     op: TezosActivateAccountOperation
   ): Promise<TezosSendResponse> => {
-    if (!this.address) {
+    if (!this.connection) {
       throw new TezosConnectionError();
     }
-    return this.send({ ...op, pkh: this.address });
+    return this.send({ ...op, pkh: this.connection.address });
   };
 
   public sendBallot = (
