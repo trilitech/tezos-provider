@@ -84,6 +84,7 @@
     "@walletconnect/logger": ">=2.1.2",
     "@walletconnect/types": ">=2.17.2",
     "@walletconnect/universal-provider": "^2.17.2",
+    "bignumber.js": "^9.1.2",
     "depcheck": "^1.4.7",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.1.0",

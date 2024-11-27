@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { ScriptedContracts } from "@taquito/rpc";
 import { TezosToolkit } from "@taquito/taquito";
 import { UniversalProvider } from "@walletconnect/universal-provider";
+import BigNumber from "bignumber.js";
 
 import { SAMPLES, SAMPLE_KINDS } from "./samples";
 import {
@@ -114,16 +115,15 @@ describe("TezosProvider", () => {
   });
 
   it("should get balance successfully", async () => {
-    const mockGetBalance = jest
-      .fn()
-      .mockResolvedValue({ toNumber: () => 1000000 });
-    (TezosToolkit as jest.Mock).mockImplementation(() => {
-      return {
-        tz: {
-          getBalance: mockGetBalance,
-        },
-      };
-    });
+    const mockGetBalance = jest.fn().mockResolvedValue(new BigNumber(1000000));
+    const mockedTz = { getBalance: mockGetBalance };
+
+    jest.mocked(TezosToolkit).mockImplementation(
+      () =>
+        ({
+          tz: mockedTz,
+        }) as unknown as InstanceType<typeof TezosToolkit>
+    );
 
     provider = await TezosProvider.init({
       projectId: "test",
@@ -275,13 +275,15 @@ describe("TezosProvider", () => {
 
   it("should handle getCurrentProposal correctly", async () => {
     const mockGetCurrentProposal = jest.fn().mockResolvedValue("proposal_hash");
-    (TezosToolkit as jest.Mock).mockImplementation(() => {
-      return {
-        rpc: {
-          getCurrentProposal: mockGetCurrentProposal,
-        },
-      };
-    });
+    const mockedRpcClientInterface = {
+      getCurrentProposal: mockGetCurrentProposal,
+    };
+    jest.mocked(TezosToolkit).mockImplementation(
+      () =>
+        ({
+          rpc: mockedRpcClientInterface,
+        }) as unknown as InstanceType<typeof TezosToolkit>
+    );
 
     provider = await TezosProvider.init({
       projectId: "test",
@@ -297,21 +299,19 @@ describe("TezosProvider", () => {
 
 describe("TezosProvider Tests with Sample requests", () => {
   let provider: TezosProvider;
-  const mockInit = jest.fn();
   const mockConnect = jest.fn();
   const mockRequest = jest.fn();
 
   beforeEach(async () => {
-    (UniversalProvider.init as jest.Mock).mockResolvedValue({
+    jest.mocked(UniversalProvider.init).mockResolvedValue({
       on: jest.fn(),
       connect: mockConnect,
       request: mockRequest,
       session: {
         namespaces: { tezos: { accounts: ["tezos:mainnet:address1"] } },
       },
-    });
+    } as unknown as InstanceType<typeof UniversalProvider>);
 
-    mockInit.mockClear();
     mockConnect.mockClear();
     mockRequest.mockClear();
 
@@ -323,7 +323,6 @@ describe("TezosProvider Tests with Sample requests", () => {
     expect(provider.isConnected).toBe(true);
     expect(provider.connection).toBeDefined();
 
-    // mockRequest = jest.fn();
     (provider as any).request = mockRequest;
   });
 
@@ -331,7 +330,7 @@ describe("TezosProvider Tests with Sample requests", () => {
     const mockSendResponse = { hash: "opHash" };
     mockRequest.mockResolvedValue(mockSendResponse);
 
-    let res = null;
+    let res: any = null;
     let operation: PartialTezosOperation | null = null;
 
     switch (kind) {
