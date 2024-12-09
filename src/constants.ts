@@ -1,6 +1,6 @@
 import { TezosOperationType } from "@airgap/beacon-types";
 
-import { ChainData, ChainsMap, TezosMethod } from "./types";
+import { type ChainData, type ChainsMap, TezosMethod } from "./types";
 
 export const DefaultTezosMethods: TezosMethod[] = [
   TezosMethod.GET_ACCOUNTS,
@@ -11,24 +11,24 @@ export const DefaultTezosMethods: TezosMethod[] = [
 export const RelayUrl: string = "wss://relay.walletconnect.org";
 
 export const TezosChainDataMainnet: ChainData = {
-  name: "Tezos",
-  id: "tezos:mainnet",
-  rpc: ["https://rpc.tzbeta.net"],
   api: "https://api.tzkt.io/v1",
+  id: "tezos:mainnet",
+  name: "Tezos",
+  rpc: ["https://rpc.tzbeta.net"],
   testnet: false,
 };
 
 export const TezosChainDataTestnet: ChainData = {
-  name: "Tezos Ghostnet",
-  id: "tezos:ghostnet",
-  rpc: ["https://rpc.ghostnet.teztnets.com"],
   api: "https://api.ghostnet.tzkt.io/v1",
+  id: "tezos:ghostnet",
+  name: "Tezos Ghostnet",
+  rpc: ["https://rpc.ghostnet.teztnets.com"],
   testnet: true,
 };
 
 export const TezosChainMap: ChainsMap = {
-  "tezos:mainnet": TezosChainDataMainnet,
   "tezos:ghostnet": TezosChainDataTestnet,
+  "tezos:mainnet": TezosChainDataMainnet,
 };
 
 // These operations are not needed for the wallet.

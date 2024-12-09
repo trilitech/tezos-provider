@@ -1,11 +1,11 @@
 import {
-  PartialTezosOperation as PartialTezosOperationOriginal,
-  PartialTezosOriginationOperation as PartialTezosOriginationOperationOriginal,
-  TezosDrainDelegateOperation,
+  type PartialTezosOperation as PartialTezosOperationOriginal,
+  type PartialTezosOriginationOperation as PartialTezosOriginationOperationOriginal,
+  type TezosDrainDelegateOperation,
   TezosOperationType,
 } from "@airgap/beacon-types";
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { ScriptedContracts } from "@taquito/rpc";
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
+import { type ScriptedContracts } from "@taquito/rpc";
 import { TezosToolkit } from "@taquito/taquito";
 import { UniversalProvider } from "@walletconnect/universal-provider";
 import BigNumber from "bignumber.js";
@@ -15,13 +15,13 @@ import {
   TezosChainDataMainnet,
   TezosChainDataTestnet,
   UnsupportedOperations,
-} from "../src/constants";
-import TezosProvider, { TezosProviderOpts } from "../src/TezosProvider";
+} from "../constants";
+import TezosProvider, { type TezosProviderOpts } from "../TezosProvider";
 import {
+  type TezosConnectOpts,
   TezosConnectionError,
-  TezosConnectOpts,
   TezosMethod,
-} from "../src/types";
+} from "../types";
 
 interface PartialTezosOriginationOperation
   extends Omit<PartialTezosOriginationOperationOriginal, "script"> {
@@ -45,8 +45,8 @@ describe("TezosProvider", () => {
 
   beforeEach(() => {
     jest.mocked(UniversalProvider.init).mockResolvedValue({
-      on: jest.fn(),
       connect: mockConnect,
+      on: jest.fn(),
       request: mockRequest,
       session: {
         namespaces: { tezos: { accounts: ["tezos:mainnet:address1"] } },
@@ -56,8 +56,8 @@ describe("TezosProvider", () => {
     global.fetch = jest.fn().mockResolvedValue({
       json: jest.fn().mockResolvedValue([
         {
+          originatedContract: { address: "KT1...", kind: "smart_contract" },
           status: "applied",
-          originatedContract: { kind: "smart_contract", address: "KT1..." },
         },
       ]),
     });
@@ -70,8 +70,8 @@ describe("TezosProvider", () => {
 
   it("should initialize the TezosProvider", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
 
     expect(provider).toBeInstanceOf(TezosProvider);
@@ -80,15 +80,15 @@ describe("TezosProvider", () => {
 
   it("should connect to a specified chain", async () => {
     const opts: TezosProviderOpts = {
+      metadata: { description: "test", icons: [], name: "test", url: "test" },
       projectId: "test",
-      metadata: { name: "test", description: "test", url: "test", icons: [] },
     };
     provider = await TezosProvider.init(opts);
 
     const connectOpts: TezosConnectOpts = {
       chain: TezosChainDataTestnet,
-      methods: [TezosMethod.GET_ACCOUNTS],
       events: [],
+      methods: [TezosMethod.GET_ACCOUNTS],
     };
 
     await provider.connect(connectOpts);
@@ -97,8 +97,8 @@ describe("TezosProvider", () => {
       namespaces: {
         tezos: {
           chains: ["tezos:ghostnet"],
-          methods: [TezosMethod.GET_ACCOUNTS],
           events: [],
+          methods: [TezosMethod.GET_ACCOUNTS],
         },
       },
     });
@@ -107,8 +107,8 @@ describe("TezosProvider", () => {
 
   it("should throw TezosConnectionError if not connected when calling checkConnection", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
 
     expect(() => provider.checkConnection()).toThrow(TezosConnectionError);
@@ -126,8 +126,8 @@ describe("TezosProvider", () => {
     );
 
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
 
@@ -140,8 +140,8 @@ describe("TezosProvider", () => {
 
   it("should throw error if balance is requested without address", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
 
     await expect(provider.getBalance()).rejects.toThrow(TezosConnectionError);
@@ -149,8 +149,8 @@ describe("TezosProvider", () => {
 
   it("should handle tezosSendTransaction correctly", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
 
@@ -158,9 +158,9 @@ describe("TezosProvider", () => {
     mockRequest.mockResolvedValue(mockSendResponse);
 
     const result = await provider.sendTransaction({
-      kind: TezosOperationType.TRANSACTION,
-      destination: "tz1...",
       amount: "1000000",
+      destination: "tz1...",
+      kind: TezosOperationType.TRANSACTION,
     });
 
     expect(result.hash).toBe("opHash");
@@ -177,20 +177,20 @@ describe("TezosProvider", () => {
 
   it("should handle tezos_getAccounts correctly", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
 
     const mockGetAccountsResponse = [
       {
-        algo: "ed25519",
         address: "tz1hQHevf3TZbdVmhtxq7PAL4F4Hfaq7svYL",
+        algo: "ed25519",
         pubkey: "edpkvJ6FmCH1BgT7DpoHF8jDxwHVr2vbhYHbCST1oDJarxyxwV91Hd",
       },
       {
-        algo: "ed25519",
         address: "tz1ZCvMYCB3WK9HTzjeXgLN7NJnHNRccwgRN",
+        algo: "ed25519",
         pubkey: "edpkvCcBxqYEV2bYLiqhteBpUhH3T2EdkXZ3EuKUYcbHN2RnLL9MgF",
       },
     ];
@@ -209,8 +209,8 @@ describe("TezosProvider", () => {
 
   it("should handle tezos_sign correctly", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
 
@@ -227,8 +227,8 @@ describe("TezosProvider", () => {
       expect.objectContaining({
         method: TezosMethod.SIGN,
         params: expect.objectContaining({
-          payload: "0x1234567890abcdef",
           account: provider.connection?.address,
+          payload: "0x1234567890abcdef",
         }),
       }),
       "tezos:mainnet"
@@ -237,15 +237,15 @@ describe("TezosProvider", () => {
 
   it("should throw error if sendTransaction is called without address", async () => {
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
 
     await expect(
       provider.sendTransaction({
-        kind: TezosOperationType.TRANSACTION,
-        destination: "tz1...",
         amount: "1000000",
+        destination: "tz1...",
+        kind: TezosOperationType.TRANSACTION,
       })
     ).rejects.toThrow(TezosConnectionError);
   });
@@ -254,14 +254,14 @@ describe("TezosProvider", () => {
     global.fetch = jest.fn().mockResolvedValue({
       json: jest.fn().mockResolvedValue([
         {
+          originatedContract: { address: "KT1...", kind: "smart_contract" },
           status: "applied",
-          originatedContract: { kind: "smart_contract", address: "KT1..." },
         },
       ]),
     });
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
     expect(provider.connection).toBeDefined();
@@ -286,8 +286,8 @@ describe("TezosProvider", () => {
     );
 
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
 
@@ -304,8 +304,8 @@ describe("TezosProvider Tests with Sample requests", () => {
 
   beforeEach(async () => {
     jest.mocked(UniversalProvider.init).mockResolvedValue({
-      on: jest.fn(),
       connect: mockConnect,
+      on: jest.fn(),
       request: mockRequest,
       session: {
         namespaces: { tezos: { accounts: ["tezos:mainnet:address1"] } },
@@ -316,8 +316,8 @@ describe("TezosProvider Tests with Sample requests", () => {
     mockRequest.mockClear();
 
     provider = await TezosProvider.init({
-      projectId: "test",
       metadata: {},
+      projectId: "test",
     } as TezosProviderOpts);
     await provider.connect({ chain: TezosChainDataMainnet });
     expect(provider.isConnected).toBe(true);
@@ -372,7 +372,9 @@ describe("TezosProvider Tests with Sample requests", () => {
         operation = SAMPLES[kind];
         res = await provider.sendIncreasePaidStorage(operation);
         break;
-      default:
+      case SAMPLE_KINDS.GET_ACCOUNTS:
+        throw new Error(`Test: Unsupported kind ${kind}`);
+      case SAMPLE_KINDS.SIGN:
         throw new Error(`Test: Unsupported kind ${kind}`);
     }
 
@@ -428,10 +430,10 @@ describe("TezosProvider Tests with Sample requests", () => {
   });
   it("should throw an error for unsupported kind", async () => {
     const op: TezosDrainDelegateOperation = {
-      kind: TezosOperationType.DRAIN_DELEGATE,
       consensus_key: "...",
       delegate: "tz1...",
       destination: "tz1...",
+      kind: TezosOperationType.DRAIN_DELEGATE,
     };
 
     expect(UnsupportedOperations.includes(op.kind)).toBe(true);
@@ -467,8 +469,8 @@ describe("TezosProvider Static Methods", () => {
   describe("formatTezosBalance", () => {
     it("should format the Tezos balance correctly", () => {
       const asset = {
-        name: "Tezos",
         balance: 3_000_000, // equivalent to 3 Tezos
+        name: "Tezos",
         symbol: "XTZ",
       };
       const result = TezosProvider.formatTezosBalance(asset);
@@ -477,8 +479,8 @@ describe("TezosProvider Static Methods", () => {
 
     it("should handle balance less than 1 Tezos and format it correctly", () => {
       const asset = {
-        name: "Tezos",
         balance: 500_000, // equivalent to 0.5 Tezos
+        name: "Tezos",
         symbol: "XTZ",
       };
       const result = TezosProvider.formatTezosBalance(asset);
@@ -487,8 +489,8 @@ describe("TezosProvider Static Methods", () => {
 
     it("should format 0 balance correctly", () => {
       const asset = {
-        name: "Tezos",
         balance: 0, // 0 Tezos
+        name: "Tezos",
         symbol: "XTZ",
       };
       const result = TezosProvider.formatTezosBalance(asset);
@@ -497,8 +499,8 @@ describe("TezosProvider Static Methods", () => {
 
     it("should handle large balance values and format them correctly", () => {
       const asset = {
-        name: "Tezos",
         balance: 10_000_000_000, // equivalent to 10,000 Tezos
+        name: "Tezos",
         symbol: "XTZ",
       };
       const result = TezosProvider.formatTezosBalance(asset);
