@@ -1,0 +1,108 @@
+{
+  "name": "@trili/tezos-provider",
+  "description": "Tezos Provider for WalletConnect Protocol",
+  "version": "1.0.18",
+  "author": "Trilitech TriliTech <contact@trili.tech> (https://trili.tech)",
+  "homepage": "https://trili.tech",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trilitech/tezos-connect.git",
+    "directory": "."
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "wallet",
+    "walletconnect",
+    "tezos",
+    "provider",
+    "blockchain"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsup-node",
+    "test": "jest",
+    "prettier": "prettier --write .",
+    "lint": "eslint -c eslint.config.mjs --fix ./src/**/*.ts",
+    "lint:ci": "eslint src/**/*.ts -f json -o lintReport.json || true"
+  },
+  "tsup": {
+    "entry": [
+      "src/index.ts"
+    ],
+    "dts": true,
+    "clean": true,
+    "format": [
+      "cjs",
+      "esm"
+    ],
+    "external": [
+      "@taquito/taquito",
+      "@taquito/rpc",
+      "@airgap/beacon-types",
+      "@walletconnect/universal-provider",
+      "@walletconnect/types",
+      "@walletconnect/keyvaluestorage",
+      "@walletconnect/logger"
+    ]
+  },
+  "dependencies": {
+    "micromatch": "^4.0.8"
+  },
+  "peerDependencies": {
+    "@airgap/beacon-types": "^4.3.1",
+    "@taquito/rpc": "^20.0.1",
+    "@taquito/taquito": "^20.1.0",
+    "@walletconnect/keyvaluestorage": ">=1.1.1",
+    "@walletconnect/logger": ">=2.1.2",
+    "@walletconnect/types": ">=2.17.2",
+    "@walletconnect/universal-provider": "^2.17.2"
+  },
+  "devDependencies": {
+    "@airgap/beacon-types": "^4.3.1",
+    "@jest/globals": "^29.7.0",
+    "@taquito/rpc": "^20.0.1",
+    "@taquito/taquito": "^20.1.0",
+    "@types/jest": "^29.5.13",
+    "@types/micromatch": "^4",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "@walletconnect/keyvaluestorage": ">=1.1.1",
+    "@walletconnect/logger": ">=2.1.2",
+    "@walletconnect/types": ">=2.17.2",
+    "@walletconnect/universal-provider": "^2.17.2",
+    "bignumber.js": "^9.1.2",
+    "depcheck": "^1.4.7",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest": "^28.9.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-sort-keys": "^2.3.5",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "install-peerdeps": "^3.0.3",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "ts-jest": "^29.2.5",
+    "tsup": "^8.2.4",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=18",
+    "yarn": ">=1.22"
+  }
+}
